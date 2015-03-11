@@ -331,12 +331,9 @@ describe('RedisAdapter with copyOnActivate option', function() {
 
         it('copies version value to current version value', function() {
           return activation
-            .then(function() {
-              return redisClient.get(revisionToActivate)
-            })
-            .then(function(newValue) {
+           .then(function(newValue) {
               return redisClient.get(MANIFEST+':current').then(function(activeValue) {
-                return expect(newValue).to.eq(activeValue);
+                return expect(activeValue).to.eq('Hello');
               })
             });
         });
