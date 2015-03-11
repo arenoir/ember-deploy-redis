@@ -283,7 +283,7 @@ describe('RedisAdapter with copyOnActivate option', function() {
       manifest: MANIFEST,
       manifestSize: MANIFEST_SIZE,
       taggingAdapter: mockShaTaggingAdapter,
-      copyOnActivate: true,
+      copyToKey: 'current-copy',
       ui: new MockUI()
     });
 
@@ -319,20 +319,10 @@ describe('RedisAdapter with copyOnActivate option', function() {
             });
         });
 
-        it('sets <manifest>-version to active ', function() {
-          return activation
-            .then(function() {
-              return redisClient.get(MANIFEST+'-version');
-            })
-            .then(function(result) {
-              return expect(result).to.eq(revisionToActivate);
-            });
-        });
-
         it('copies version value to current version value', function() {
           return activation
            .then(function(newValue) {
-              return redisClient.get(MANIFEST+':current').then(function(activeValue) {
+              return redisClient.get('current-copy').then(function(activeValue) {
                 return expect(activeValue).to.eq('Hello');
               })
             });
