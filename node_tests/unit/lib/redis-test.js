@@ -275,3 +275,73 @@ describe('RedisAdapter', function() {
     });
   });
 });
+
+describe('RedisAdapter with copyOnActivate option', function() {
+  beforeEach(function() {
+    redisAdapter = new RedisAdapter({
+      config: REDIS_CONNECTION_OPTIONS,
+      manifest: MANIFEST,
+      manifestSize: MANIFEST_SIZE,
+      taggingAdapter: mockShaTaggingAdapter,
+      copyOnActivate: true,
+      ui: new MockUI()
+    });
+
+    upload = uploadWithRevisionKey();
+  });
+
+  afterEach(function(done) {
+    mockShaTaggingAdapter.reset();
+    revisionsList = [];
+    cleanUpRedis(done);
+  });
+
+  describe('list/activate', function() {
+    var uploadsDone;
+
+    beforeEach(function() {
+      uploadsDone = upload
+        .then(fillUpManifest.bind(null, MANIFEST_SIZE - 1, revisionsList));
+    });
+
+    describe('#activate', function() {
+      var activation;
+
+      describe('successfull activation', function() {
+        var revisionToActivate;
+
+        beforeEach(function() {
+          activation = uploadsDone
+            .then(function() {
+              resetUI(redisAdapter);
+              revisionToActivate = revisionsList[0];
+              return redisAdapter.activate(revisionToActivate);
+            });
+        });
+
+        it('sets <manifest>-version to active ', function() {
+          return activation
+            .then(function() {
+              return redisClient.get(MANIFEST+'-version');
+            })
+            .then(function(result) {
+              return expect(result).to.eq(revisionToActivate);
+            });
+        });
+
+        it('copies version value to current version value', function() {
+          return activation
+            .then(function() {
+              return redisClient.get(revisionToActivate)
+            })
+            .then(function(newValue) {
+              return redisClient.get(MANIFEST+':current').then(function(activeValue) {
+                return expect(newValue).to.eq(activeValue);
+              })
+            });
+        });
+      });
+    });
+  });
+
+});
